@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Meeting Organizer </title>
+</head>
+<body>
+    <body style="background-color:#7796c7"></body>
+    <h1 style ="text-align:center;"> Meeting Organizer</h1>
+    <form id="meetingForm">
+        <label for="topic">Toplantı Konusu:</label>
+        <input type="text" id="topic" name="topic" required>
+
+        <label for="date">Tarih:</label>
+        <input type="date" id="date" name="date" required>
+
+        <label for="start_time">Başlangıç Saati:</label>
+        <input type="time" id="start_time" name="start_time" required>
+
+        <label for="end_time">Bitiş Saati:</label>
+        <input type="time" id="end_time" name="end_time" required>
+
+        <label for="participants">Katılımcılar (virgülle ayırın):</label>
+        <input type="text" id="participants" name="participants" required>
+
+        <button type="button" onclick="addMeeting()">Toplantı Ekle</button>
+    </form>
+
+    <h2>Toplantı Listesi</h2>
+    <ul id="meetingsList">
+        {% for meeting in meetings %}
+            <li>
+                <strong>{{ meeting['topic'] }}</strong> - {{ meeting['date'] }}, {{ meeting['start_time'] }}-{{ meeting['end_time'] }}, Katılımcılar: {{ meeting['participants'] }}
+                <button type="button" onclick="editMeeting('{{ meeting.id }}')">Düzenle</button>
+                <button type="button" onclick="deleteMeeting('{{ meeting.id }}')">Sil</button>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <div id="editForm" style="display: none;">
+        <h2>Toplantı Güncelleme Formu</h2>
+        <form id="updateForm">
+            <label for="editTopic">Toplantı Konusu:</label>
+            <input type="text" id="editTopic" name="editTopic" required><br>
+
+            <label for="editDate">Tarih:</label>
+            <input type="date" id="editDate" name="editDate" required><br>
+
+            <label for="editStartTime">Başlangıç Saati:</label>
+            <input type="time" id="editStartTime" name="editStartTime" required><br>
+
+            <label for="editEndTime">Bitiş Saati:</label>
+            <input type="time" id="editEndTime" name="editEndTime" required><br>
+
+            <label for="editParticipants">Katılımcılar:</label>
+            <input type="text" id="editParticipants" name="editParticipants" required><br>
+
+            <button type="button" onclick="updateMeeting()">Toplantıyı Güncelle</button>
+        </form>
+    </div>
+
+    <button type="button" onclick="editSelectedMeeting()">Mevcut Toplantıyı Güncelle</button>
+
+    <script>
+        let selectedMeetingId = null;
+        let meetings = []; // meetings listesini tanımlama
+
+        function editMeeting(meetingId) {
+            // Güncelleme formunu görünür yap
+            document.getElementById('editForm').style.display = 'block';
+
+            // Seçilen toplantının bilgilerini alma
+            selectedMeetingId = meetingId;
+            const selectedMeeting = meetings.find(meeting => meeting.id === meetingId);
+
+            // Bilgileri form alanlarına doldurma
+            if (selectedMeeting) {
+                document.getElementById('editTopic').value = selectedMeeting.topic || '';
+                document.getElementById('editDate').value = selectedMeeting.date || '';
+                document.getElementById('editStartTime').value = selectedMeeting.start_time || '';
+                document.getElementById('editEndTime').value = selectedMeeting.end_time || '';
+                document.getElementById('editParticipants').value = selectedMeeting.participants || '';
+            } else {
+                // Eğer seçilen toplantı tanımlı değilse, hata mesajını konsola yazma
+                console.error(`Toplantı ID'si ${meetingId} ile eşleşen bir toplantı bulunamadı.`);
+                alert('Düzenlenecek bir toplantı bulunamadı.');
+                document.getElementById('editForm').style.display = 'none';
+            }
+        }
+
+        function updateMeeting() {
+            // Güncelleme formunu gizleme
+            document.getElementById('editForm').style.display = 'none';
+
+            // Seçilen toplantının bilgilerini alma
+            const selectedMeetingIndex = meetings.findIndex(meeting => meeting.id === selectedMeetingId);
+            const selectedMeeting = meetings[selectedMeetingIndex];
+
+            // Güncelleme formundan yeni bilgileri alma
+            selectedMeeting.topic = document.getElementById('editTopic').value;
+            selectedMeeting.date = document.getElementById('editDate').value;
+            selectedMeeting.start_time = document.getElementById('editStartTime').value;
+            selectedMeeting.end_time = document.getElementById('editEndTime').value;
+            selectedMeeting.participants = document.getElementById('editParticipants').value;
+
+            // Güncellenmiş bilgileri ekrana yansıtma
+            renderMeetings();
+
+        
+        }
+
+        function editSelectedMeeting() {
+            // Mevcut toplantıyı düzenleme formunu görünür yapma
+            const selectedMeeting = meetings.find(meeting => meeting.id === selectedMeetingId);
+            if (selectedMeeting) {
+                editMeeting(selectedMeetingId);
+            } else {
+                alert('Düzenlenecek bir toplantı seçilmemiş.');
+            }
+        }
+
+        function renderMeetings() {
+            const meetingsList = document.getElementById('meetingsList');
+            meetingsList.innerHTML = ''; // Önceki toplantıları temizleme
+
+            for (const meeting of meetings) {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `<strong>${meeting.topic}</strong> - ${meeting.date}, ${meeting.start_time}-${meeting.end_time}, Katılımcılar: ${meeting.participants}`;
+
+                const editButton = document.createElement('button');
+                editButton.textContent = 'Düzenle';
+                editButton.addEventListener('click', () => editMeeting(meeting['id']));
+
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Sil';
+                deleteButton.addEventListener('click', () => deleteMeeting(meeting['id']));
+
+                listItem.appendChild(editButton);
+                listItem.appendChild(deleteButton);
+
+                meetingsList.appendChild(listItem);
+            }
+        }
+
+        function addMeeting() {
+            const form = document.getElementById('meetingForm');
+            const formData = new FormData(form);
+
+            // ID'yi oluştur
+            const meetingId = createMeetingId();
+
+            const meeting = {
+                id: meetingId,
+                topic: formData.get('topic'),
+                date: formData.get('date'),
+                start_time: formData.get('start_time'),
+                end_time: formData.get('end_time'),
+                participants: formData.get('participants')
+            };
+
+            // meetings listesine toplantıyı ekleme
+            meetings.push(meeting);
+
+            // Toplantıları güncelle ve ekranda gösterme
+            renderMeetings();
+
+            
+        }
+
+        function createMeetingId() {
+            // Rasgele bir sayı oluşturarak benzersiz bir ID elde etme
+            return Math.floor(Math.random() * 1000000).toString();
+        }
+
+        function deleteMeeting(id) {
+            meetings = meetings.filter(meeting => meeting.id !== id);
+            renderMeetings();
+        }
+    </script>
+</body>
+</html>
